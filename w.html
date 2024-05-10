@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast</title>
+    <link rel="stylesheet" href="w.css">
+</head>
+<body>
+    <h2 class="wf">Weather Forecast</h2>
+    <div class="weather-input">
+        
+        <label for="cityInput" class="t">Enter city name or zip code:</label>
+        <div class="inputContainer">
+            <input type="text" id="cityInput" class="cityInput">
+            <input type="submit" value="Search" id="submit" class="cityButton">
+            <!-- <button id="submit" class="cityButton">Search</button> -->
+        </div>
+       
+    </div>
+
+    <div class="weather-info">
+
+        <h3>Current Weather</h3>
+        <div class="weatherContainer"> 
+            
+            <div class="report">
+            <img src="./images/weather.gif" alt="" />
+            <span class="title">Weather</span>
+            <span class="weather content">No Data</span>
+            </div>
+
+            <div class="report">
+            <img src="./images/hot.gif" alt="" />
+            <span class="title">Temparature</span>
+            <span class="temp content">No Data</span>
+            </div>
+
+            <div class="report">
+            <img src="./images/wind.gif" alt="" />
+            <span class="title">Wind Speed</span>
+            <span class="wind content">No Data</span>
+            </div>
+
+            <div class="report">
+            <img src="./images/humidity.gif" alt="" />
+            <span class="title">Humidity</span>
+            <span class="humidity content">No Data</span>
+            </div>
+
+        </div>
+
+        
+        
+        <div id="forecast">
+            <h3>Forecast</h3>
+            <div id="forecastData"></div>
+        </div>
+
+    </div>
+    
+
+    <div class="unit">
+        <label for="unitSelect">Select Unit:</label>
+        <select id="unitSelect">
+            <option value="metric">Celsius</option>
+            <option value="imperial">Fahrenheit</option>
+        </select>
+    </div>
+
+    
+
+    <script>
+        const weather = document.querySelector(".weather");
+        const temp = document.querySelector(".temp");
+        const wind = document.querySelector(".wind");
+        const humidity = document.querySelector(".humidity");
+        const cityInput = document.getElementById("cityInput");
+        const submit = document.getElementById("submit");
+        const forecastData = document.getElementById("forecastData");
+        const unitSelect = document.getElementById("unitSelect");
+
+        async function weatherReport() {
+            const apiKey = "2d99472855a7d7a4396ceb46cc433a83";
+            let cityData = cityInput.value.trim();
+            const unit = unitSelect.value;
+            const url = `https://api.openweathermap.org/data/2.5/weather?q=${cityData}&appid=${apiKey}&units=${unit}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.cod === 200) {
+                    const weatherData = data.weather[0].description;
+                    const tempData = `${data.main.temp}°${unit === "metric" ? "C" : "F"}`;
+                    const windData = `${data.wind.speed} Km/h`;
+                    const humidityData = `${data.main.humidity}%`;
+                    displayCurrentWeather(weatherData, tempData, windData, humidityData);
+                } else {
+                    displayNoData();
+                }
+            } catch (error) {
+                console.error("Error fetching weather data:", error);
+                displayNoData();
+            }
+        }
+
+        function displayCurrentWeather(weatherData, tempData, windData, humidityData) {
+            weather.innerText = weatherData;
+            temp.innerText = tempData;
+            wind.innerText = windData;
+            humidity.innerText = humidityData;
+        }
+
+        function displayNoData() {
+            weather.innerText = "No data";
+            temp.innerText = "No data";
+            wind.innerText = "No data";
+            humidity.innerText = "No data";
+        }
+
+        function clearForecastData() {
+            forecastData.innerHTML = "";
+        }
+
+        async function fetchForecast(cityData, unit) {
+            const apiKey = "2d99472855a7d7a4396ceb46cc433a83";
+            const url = `https://api.openweathermap.org/data/2.5/forecast?q=${cityData}&appid=${apiKey}&units=${unit}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.cod === "200") {
+                    displayForecast(data.list);
+                } else {
+                    console.error("Error fetching forecast data");
+                }
+            } catch (error) {
+                console.error("Error fetching forecast data:", error);
+            }
+        }
+
+        function displayForecast(forecastList) {
+            clearForecastData();
+            forecastList.forEach((item) => {
+                const date = new Date(item.dt * 1000);
+                const day = date.toLocaleDateString('en-US', { weekday: 'long' });
+                const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                const temp = `${item.main.temp}°${unitSelect.value === "metric" ? "C" : "F"}`;
+                const weather = item.weather[0].description;
+                const wind = `${item.wind.speed} Km/h`;
+                const humidity = `${item.main.humidity}%`;
+
+                const forecastItem = document.createElement('div');
+                forecastItem.classList.add('forecast-item');
+                forecastItem.innerHTML = `
+                    <p>Date/Time: ${day} ${time}</p>
+                    <p>Temperature: ${temp}</p>
+                    <p>Weather: ${weather}</p>
+                    <p>Wind: ${wind}</p>
+                    <p>Humidity: ${humidity}</p>
+                `;
+                forecastData.appendChild(forecastItem);
+            });
+        }
+
+        submit.addEventListener("click", () => {
+            weatherReport();
+            fetchForecast(cityInput.value.trim(), unitSelect.value);
+        });
+
+        unitSelect.addEventListener("change", () => {
+            weatherReport();
+            fetchForecast(cityInput.value.trim(), unitSelect.value);
+        });
+    </script>
+</body>
+</html>
